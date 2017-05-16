@@ -9,7 +9,7 @@ import android.net.Uri;
  * Created by yzubritskiy on 5/14/2017.
  */
 
-public class SQLiteHelper extends SQLiteOpenHelper {
+public class DBHelper extends SQLiteOpenHelper {
 
     public static final String CONTENT_AUTHORITY = "com.research.loaders";
 
@@ -19,7 +19,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 1;
 
-    public SQLiteHelper(Context context) {
+    public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
@@ -34,5 +34,10 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         db.execSQL(CarsTable.Requests.DROP_REQUEST);
         db.execSQL(OwnersTable.Requests.DROP_REQUEST);
         onCreate(db);
+    }
+
+    public void deleteAllTables(SQLiteDatabase db){
+        db.execSQL("delete from "+ CarsTable.Requests.TABLE_NAME);
+        db.execSQL("delete from "+ OwnersTable.Requests.TABLE_NAME);
     }
 }

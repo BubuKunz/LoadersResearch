@@ -29,6 +29,9 @@ public class Owner {
         this.birthDate = birthDate;
     }
 
+    public Owner() {
+    }
+
     public long getId() {
         return id;
     }

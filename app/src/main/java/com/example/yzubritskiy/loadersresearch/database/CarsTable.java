@@ -16,7 +16,7 @@ import java.util.List;
  */
 
 public class CarsTable {
-    public static final Uri URI = SQLiteHelper.BASE_CONTENT_URI.buildUpon().appendPath(Requests.TABLE_NAME).build();
+    public static final Uri URI = DBHelper.BASE_CONTENT_URI.buildUpon().appendPath(Requests.TABLE_NAME).build();
 
     public static void save(Context context, @NonNull Car car) {
         context.getContentResolver().insert(URI, toContentValues(car));
@@ -73,7 +73,7 @@ public class CarsTable {
 
     public interface Columns {
         String NUMBER = "number";
-        String YEAR = "year";
+        String YEAR = "mOwnersSecondName";
         String MODEL = "model";
         String OWNER_ID = "owner_id";
         String ID = "_id";

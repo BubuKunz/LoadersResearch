@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 
-import com.example.yzubritskiy.loadersresearch.model.Car;
 import com.example.yzubritskiy.loadersresearch.model.Owner;
 
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import java.util.List;
  */
 
 public class OwnersTable {
-    public static final Uri URI = SQLiteHelper.BASE_CONTENT_URI.buildUpon().appendPath(Requests.TABLE_NAME).build();
+    public static final Uri URI = DBHelper.BASE_CONTENT_URI.buildUpon().appendPath(Requests.TABLE_NAME).build();
 
     public static Uri save(Context context, @NonNull Owner owner) {
         return context.getContentResolver().insert(URI, toContentValues(owner));
@@ -38,7 +37,7 @@ public class OwnersTable {
         values.put(Columns.FIRST_NAME, owner.getFirstName());
         values.put(Columns.SECOND_NAME, owner.getSecondName());
         values.put(Columns.BIRTH_DATE, owner.getBirthDate().getTime());
-        values.put(Columns.ID, owner.getId());
+//        values.put(Columns.ID, owner.getId());
         return values;
     }
 
