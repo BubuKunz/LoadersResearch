@@ -2,12 +2,15 @@ package com.example.yzubritskiy.loadersresearch.database;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.example.yzubritskiy.loadersresearch.MainActivity;
 import com.example.yzubritskiy.loadersresearch.model.Car;
 import com.example.yzubritskiy.loadersresearch.model.Owner;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by yzubritskiy on 5/15/2017.
@@ -45,9 +48,10 @@ public class DBManager {
         ContentValues contentValues = OwnersTable.toContentValues(owner);
         long id = m_DB.insert(OwnersTable.Requests.TABLE_NAME, null, contentValues);
         for(Car car:owner.getCars()){
-            ContentValues carValues = CarsTable.toContentValues(car);
             car.setOwnerId(id);
-            m_DB.insert(CarsTable.Requests.TABLE_NAME, null, carValues);
+            ContentValues carValues = CarsTable.toContentValues(car);
+            long carId =  m_DB.insert(CarsTable.Requests.TABLE_NAME, null, carValues);
+            Log.d(TAG, "car OwnerId->"+id+", owner carId->"+carId);
         }
         close();
         Log.d(TAG, "addOwner id->"+id);
@@ -59,8 +63,8 @@ public class DBManager {
         ContentValues contentValues = OwnersTable.toContentValues(owner);
         int rowsNumber = m_DB.update(OwnersTable.Requests.TABLE_NAME, contentValues, OwnersTable.Columns.ID + " = " + owner.getId(), null);
         for(Car car:owner.getCars()){
-            ContentValues carValues = CarsTable.toContentValues(car);
             car.setOwnerId(owner.getId());
+            ContentValues carValues = CarsTable.toContentValues(car);
             int count = m_DB.update(OwnersTable.Requests.TABLE_NAME, contentValues, OwnersTable.Columns.ID + " = " + owner.getId(), null);
             if(count<0){
                 m_DB.insert(CarsTable.Requests.TABLE_NAME, null, carValues);
@@ -82,7 +86,42 @@ public class DBManager {
         close();
     }
 
+    public List<Owner> getAllOwners(){
+        open();
+        Cursor cursor = m_DB.query(OwnersTable.Requests.TABLE_NAME, null, null, null, null, null, null);
+        List<Owner> owners = new ArrayList<>();
+        cursor.moveToFirst();
+        while (cursor.moveToNext()){
+            Owner owner = OwnersTable.fromCursor(cursor);
+            owner.setCars(getOwnersCars(owner.getId()));
+            owners.add(owner);
+        }
+        cursor.close();
+        close();
+        return owners;
+    }
+
     public void clearAllData(){
         m_DBHelper.deleteAllTables(m_DB);
+    }
+
+    public List<Car> getOwnersCars(long ownerId){
+        String[] arrColumns = new String[]{CarsTable.Columns.ID,
+                CarsTable.Columns.NUMBER,
+                CarsTable.Columns.OWNER_ID,
+                CarsTable.Columns.MODEL,
+                CarsTable.Columns.YEAR};
+        String strWhere = CarsTable.Columns.OWNER_ID + "=?";
+        Cursor cursor = m_DB.query(CarsTable.Requests.TABLE_NAME, arrColumns, strWhere,
+                new String[] { Long.toString(ownerId) }, null, null, null);
+        List<Car> cars = new ArrayList<>();
+        cursor.moveToFirst();
+        while (cursor.moveToNext()){
+            cars.add(CarsTable.fromCursor(cursor));
+        }
+        Log.d(TAG, "getOwnersCars OwnerId->"+ownerId+", cars.size"+cars.size()+", cursor->"+cursor.getCount());
+
+        cursor.close();
+        return cars;
     }
 }

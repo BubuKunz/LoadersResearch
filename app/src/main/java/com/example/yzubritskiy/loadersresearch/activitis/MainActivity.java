@@ -1,8 +1,8 @@
-package com.example.yzubritskiy.loadersresearch;
+package com.example.yzubritskiy.loadersresearch.activitis;
 
 
+import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
 import android.support.v4.app.FragmentActivity;
 
 import android.os.Bundle;
@@ -15,29 +15,27 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.example.yzubritskiy.loadersresearch.database.CarsTable;
+import com.example.yzubritskiy.loadersresearch.adapters.OwnersAdatper;
+import com.example.yzubritskiy.loadersresearch.R;
 import com.example.yzubritskiy.loadersresearch.database.DBManager;
 import com.example.yzubritskiy.loadersresearch.database.OwnersTable;
 import com.example.yzubritskiy.loadersresearch.model.Car;
 import com.example.yzubritskiy.loadersresearch.model.MockDataHelper;
 import com.example.yzubritskiy.loadersresearch.model.Owner;
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivity extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, View.OnClickListener {
 
     private static final String TAG = "TAG_" + MainActivity.class.getSimpleName();
     private RecyclerView mRecyclerView;
-    private Button mUpdateBtn, mInsertBtn, mDeleteBtn;
     private OwnersAdatper mAdapter;
     private DBManager mDBManager;
+    private Button mUpdateBtn, mInsertBtn, mDeleteBtn, mNextBtn;
+    private static final int LOADER_ID = 909;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -57,34 +55,14 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         mUpdateBtn = (Button) findViewById(R.id.update_btn);
         mInsertBtn = (Button) findViewById(R.id.insert_btn);
         mDeleteBtn = (Button) findViewById(R.id.delete_btn);
+        mNextBtn = (Button) findViewById(R.id.custom_loader_activity_btn);
         fillDataBase(mDBManager);
-        getSupportLoaderManager().initLoader(1, null, this);
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
-        mUpdateBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
-        mDeleteBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                List<Owner> owners = mAdapter.getData();
-                if(owners != null && !owners.isEmpty()){
-                    Random r = new Random();
-                    mDBManager.deleteOwner(owners.get(r.nextInt(owners.size())));
-                    getSupportLoaderManager().initLoader(1, null, MainActivity.this);}
-            }
-        });
-
-        mInsertBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                addRandomOwnerToDB();
-                getSupportLoaderManager().initLoader(1, null, MainActivity.this);
-            }
-        });
+        mNextBtn.setOnClickListener(this);
+        mUpdateBtn.setOnClickListener(this);
+        mDeleteBtn.setOnClickListener(this);
+        mInsertBtn.setOnClickListener(this);
     }
 
     @Override
@@ -98,7 +76,6 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         db.clearAllData();
         for (int i = 0; i < 10; i++) {
             addRandomOwnerToDB();
-//            OwnersTable.save(getApplicationContext(), owner);
         }
     }
 
@@ -109,6 +86,8 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         cars.add(MockDataHelper.createRandomCar());
         owner.setCars(cars);
         mDBManager.addOwner(owner);
+//        OwnersTable.save(getApplicationContext(), owner);
+
     }
 
     @Override
@@ -121,25 +100,45 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        Log.d(TAG, "onLoadFinished");
+//        Log.d(TAG, "onLoadFinished +cursor.getCount()->"+cursor.getCount());
+
         cursor.moveToFirst();
         List<Owner> owners = new ArrayList<>();
         while (cursor.moveToNext()){
-            Owner owner = new Owner();
-            owner.setBirthDate(new Date(cursor.getLong(cursor.getColumnIndex(OwnersTable.Columns.BIRTH_DATE))));
-            owner.setFirstName(cursor.getString(cursor.getColumnIndex(OwnersTable.Columns.FIRST_NAME)));
-            owner.setSecondName(cursor.getString(cursor.getColumnIndex(OwnersTable.Columns.SECOND_NAME)));
-            owner.setId(cursor.getLong(cursor.getColumnIndex(OwnersTable.Columns.ID)));
+            Owner owner = OwnersTable.fromCursor(cursor);
             owners.add(owner);
-
         }
         Log.d(TAG, "owners->"+owners.size());
         mAdapter.fillData(owners);
-//        cursor.close();
+
     }
 
     @Override
     public void onLoaderReset(Loader loader) {
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.custom_loader_activity_btn:
+                Intent intent = new Intent(this, CustomLoaderActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.delete_btn:
+                List<Owner> owners = mAdapter.getData();
+                if(owners != null && !owners.isEmpty()){
+                    Random r = new Random();
+                    mDBManager.deleteOwner(owners.get(r.nextInt(owners.size())));
+                    getSupportLoaderManager().restartLoader(LOADER_ID, null, MainActivity.this);}
+                break;
+            case R.id.insert_btn:
+                addRandomOwnerToDB();
+                getSupportLoaderManager().restartLoader(LOADER_ID, null, MainActivity.this);
+                break;
+            case R.id.update_btn:
+                break;
+
+        }
     }
 }
