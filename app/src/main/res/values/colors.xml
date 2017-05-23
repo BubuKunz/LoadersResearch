@@ -5,4 +5,6 @@
     <color name="colorGreyTransparent">#10000000</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="colorDescent">#ffd240</color>
+
 </resources>

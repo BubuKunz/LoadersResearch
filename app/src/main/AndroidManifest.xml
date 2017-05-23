@@ -25,11 +25,11 @@
 
         <provider
             android:name=".database.OwnersContentProvider"
-            android:authorities="com.research.loaders"
+            android:authorities="com.research.loaders.contentprovider"
             android:exported="false"
             android:label="LoadersResearchProvider" />
 
-        <activity android:name=".activitis.CustomLoaderActivity"></activity>
+        <activity android:name=".activitis.CustomLoaderActivity" />
     </application>
 
 </manifest>

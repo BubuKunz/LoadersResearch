@@ -1,6 +1,7 @@
 package com.example.yzubritskiy.loadersresearch.database;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -21,10 +22,19 @@ public class OwnersContentProvider extends ContentProvider {
     private DBHelper mDBHelper;
     private static final int OWNERS_TABLE = 1;
 
-    private static final UriMatcher URI_MATCHER;
+
+    private static final String BASE_PATH = OwnersTable.Requests.TABLE_NAME;
+    public static final Uri CONTENT_URI = Uri.parse("content://" + DBHelper.CONTENT_AUTHORITY
+            + "/" + BASE_PATH);
+
+    public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE
+            + "/owners";
+    public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
+            + "/owners";
+    private static final UriMatcher URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);;
 
     static {
-        URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
+
         URI_MATCHER.addURI(DBHelper.CONTENT_AUTHORITY, OwnersTable.Requests.TABLE_NAME, OWNERS_TABLE);
     }
     @Override
@@ -43,20 +53,17 @@ public class OwnersContentProvider extends ContentProvider {
         if (TextUtils.isEmpty(table)) {
             throw new UnsupportedOperationException("No such table to query");
         } else {
-            return database.query(table,
-                    projection,
-                    selection,
-                    selectionArgs,
-                    null,
-                    null,
-                    sortOrder);
+            // make sure that potential listeners are getting notified
+            Cursor cursor = database.query(table, projection, selection, selectionArgs, null, null, sortOrder);
+            cursor.setNotificationUri(getContext().getContentResolver(), uri);
+            return cursor;
         }
     }
 
     @Nullable
     @Override
     public String getType(Uri uri) {
-        Log.d(TAG, "getType uri->"+uri);
+        Log.d(TAG, "getType uri->"+uri+", URI_MATCHER.match(uri)->"+URI_MATCHER.match(uri));
         switch (URI_MATCHER.match(uri)) {
             case OWNERS_TABLE:
                 return OwnersTable.Requests.TABLE_NAME;
@@ -68,15 +75,19 @@ public class OwnersContentProvider extends ContentProvider {
     @Nullable
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        Log.d(TAG, "insert");
+        Log.d(TAG, "insert uri->"+uri+", values->"+values);
         SQLiteDatabase database = mDBHelper.getWritableDatabase();
         String table = getType(uri);
+        Log.d(TAG, "insert table->"+table);
         if (TextUtils.isEmpty(table)) {
             throw new UnsupportedOperationException("No such table to query");
         }
         else {
             long id = database.insertWithOnConflict(table, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-            return ContentUris.withAppendedId(uri, id);
+            getContext().getContentResolver().notifyChange(uri, null);
+            Uri result = Uri.parse(BASE_PATH + "/" + id);
+            Log.d(TAG, "inserted result->"+result+", uri->"+uri);
+            return result;
         }
     }
 
@@ -116,7 +127,9 @@ public class OwnersContentProvider extends ContentProvider {
             throw new UnsupportedOperationException("No such table to query");
         }
         else {
-            return database.delete(table, selection, selectionArgs);
+            int rowsDeleted = database.delete(table, selection, selectionArgs);
+            getContext().getContentResolver().notifyChange(uri, null);
+            return rowsDeleted;
         }
     }
 

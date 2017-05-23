@@ -9,60 +9,54 @@ import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.example.yzubritskiy.loadersresearch.adapters.OwnersAdatper;
+import com.example.yzubritskiy.loadersresearch.adapters.MyPagerAdapter;
 import com.example.yzubritskiy.loadersresearch.R;
+import com.example.yzubritskiy.loadersresearch.database.DBHelper;
 import com.example.yzubritskiy.loadersresearch.database.DBManager;
+import com.example.yzubritskiy.loadersresearch.database.OwnersContentProvider;
 import com.example.yzubritskiy.loadersresearch.database.OwnersTable;
 import com.example.yzubritskiy.loadersresearch.model.Car;
 import com.example.yzubritskiy.loadersresearch.model.MockDataHelper;
 import com.example.yzubritskiy.loadersresearch.model.Owner;
-import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-public class MainActivity extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, View.OnClickListener {
+public class MainActivity extends FragmentActivity implements View.OnClickListener, LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = "TAG_" + MainActivity.class.getSimpleName();
-    private RecyclerView mRecyclerView;
-    private OwnersAdatper mAdapter;
+    private ViewPager mViewPager;
+    private MyPagerAdapter mPagerAdapter;
     private DBManager mDBManager;
-    private Button mUpdateBtn, mInsertBtn, mDeleteBtn, mNextBtn;
-    private static final int LOADER_ID = 909;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
+    private Button mFillDataBtn, mInsertBtn, mDeleteBtn, mNextBtn;
+    public static final int LOADER_ID = 907;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mViewPager = (ViewPager) findViewById(R.id.view_pager);
+        mPagerAdapter = new MyPagerAdapter(getSupportFragmentManager());
+        mViewPager.setAdapter(mPagerAdapter);
         mDBManager = new DBManager(this);
         mDBManager.open();
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        mAdapter = new OwnersAdatper();
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mRecyclerView.setAdapter(mAdapter);
-        mUpdateBtn = (Button) findViewById(R.id.update_btn);
+
+        mFillDataBtn = (Button) findViewById(R.id.fill_data_btn);
         mInsertBtn = (Button) findViewById(R.id.insert_btn);
         mDeleteBtn = (Button) findViewById(R.id.delete_btn);
         mNextBtn = (Button) findViewById(R.id.custom_loader_activity_btn);
-        fillDataBase(mDBManager);
-        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+
 
         mNextBtn.setOnClickListener(this);
-        mUpdateBtn.setOnClickListener(this);
+        mFillDataBtn.setOnClickListener(this);
         mDeleteBtn.setOnClickListener(this);
         mInsertBtn.setOnClickListener(this);
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
     }
 
     @Override
@@ -86,37 +80,9 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         cars.add(MockDataHelper.createRandomCar());
         owner.setCars(cars);
         mDBManager.addOwner(owner);
-//        OwnersTable.save(getApplicationContext(), owner);
-
     }
 
-    @Override
-    public Loader onCreateLoader(int id, Bundle args) {
-        Log.d(TAG, "onCreateLoader");
-        CursorLoader cursorLoader = new CursorLoader(this, OwnersTable.URI, null,
-                null, null, null);
-        return cursorLoader;
-    }
 
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-//        Log.d(TAG, "onLoadFinished +cursor.getCount()->"+cursor.getCount());
-
-        cursor.moveToFirst();
-        List<Owner> owners = new ArrayList<>();
-        while (cursor.moveToNext()){
-            Owner owner = OwnersTable.fromCursor(cursor);
-            owners.add(owner);
-        }
-        Log.d(TAG, "owners->"+owners.size());
-        mAdapter.fillData(owners);
-
-    }
-
-    @Override
-    public void onLoaderReset(Loader loader) {
-
-    }
 
     @Override
     public void onClick(View v) {
@@ -126,19 +92,49 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
                 startActivity(intent);
                 break;
             case R.id.delete_btn:
-                List<Owner> owners = mAdapter.getData();
-                if(owners != null && !owners.isEmpty()){
-                    Random r = new Random();
-                    mDBManager.deleteOwner(owners.get(r.nextInt(owners.size())));
-                    getSupportLoaderManager().restartLoader(LOADER_ID, null, MainActivity.this);}
+                getContentResolver().delete(OwnersContentProvider.CONTENT_URI, null, null);
                 break;
             case R.id.insert_btn:
-                addRandomOwnerToDB();
-                getSupportLoaderManager().restartLoader(LOADER_ID, null, MainActivity.this);
+                Owner owner = MockDataHelper.createRandomOwner();
+                List<Car> cars = new ArrayList<>();
+                cars.add(MockDataHelper.createRandomCar());
+                cars.add(MockDataHelper.createRandomCar());
+                owner.setCars(cars);
+
+                getContentResolver().insert(OwnersContentProvider.CONTENT_URI, OwnersTable.toContentValues(owner));
                 break;
-            case R.id.update_btn:
+            case R.id.fill_data_btn:
+                fillDataBase(mDBManager);
                 break;
 
         }
+
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Log.d(TAG, "onCreateLoader");
+        CursorLoader cursorLoader = new CursorLoader(this, OwnersContentProvider.CONTENT_URI, null, null, null, null);
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if(data != null) {
+            Log.d(TAG, "onLoadFinished +cursor.getCount()->" + data.getCount());
+            data.moveToFirst();
+            List<Owner> owners = new ArrayList<>();
+            while (data.moveToNext()){
+                Owner owner = OwnersTable.fromCursor(data);
+                owners.add(owner);
+            }
+            Log.d(TAG, "owners->"+owners.size());
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        Log.d(TAG, "onLoaderReset->");
+
     }
 }

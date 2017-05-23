@@ -11,7 +11,7 @@ import android.net.Uri;
 
 public class DBHelper extends SQLiteOpenHelper {
 
-    public static final String CONTENT_AUTHORITY = "com.research.loaders";
+    public static final String CONTENT_AUTHORITY = "com.research.loaders.contentprovider";
 
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
