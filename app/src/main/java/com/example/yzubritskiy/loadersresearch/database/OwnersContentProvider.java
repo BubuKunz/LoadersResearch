@@ -4,12 +4,14 @@ import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -21,6 +23,7 @@ public class OwnersContentProvider extends ContentProvider {
     private static  String TAG = "TAG_"+OwnersContentProvider.class.getSimpleName();
     private DBHelper mDBHelper;
     private static final int OWNERS_TABLE = 1;
+    private static final int CARS_TABLE = 2;
 
 
     private static final String BASE_PATH = OwnersTable.Requests.TABLE_NAME;
@@ -36,6 +39,7 @@ public class OwnersContentProvider extends ContentProvider {
     static {
 
         URI_MATCHER.addURI(DBHelper.CONTENT_AUTHORITY, OwnersTable.Requests.TABLE_NAME, OWNERS_TABLE);
+        URI_MATCHER.addURI(DBHelper.CONTENT_AUTHORITY, CarsTable.Requests.TABLE_NAME, CARS_TABLE);
     }
     @Override
     public boolean onCreate() {
@@ -56,6 +60,7 @@ public class OwnersContentProvider extends ContentProvider {
             // make sure that potential listeners are getting notified
             Cursor cursor = database.query(table, projection, selection, selectionArgs, null, null, sortOrder);
             cursor.setNotificationUri(getContext().getContentResolver(), uri);
+            LocalBroadcastManager.getInstance(getContext()).sendBroadcast(new Intent("NEWDATASTRING"));
             return cursor;
         }
     }
@@ -67,6 +72,8 @@ public class OwnersContentProvider extends ContentProvider {
         switch (URI_MATCHER.match(uri)) {
             case OWNERS_TABLE:
                 return OwnersTable.Requests.TABLE_NAME;
+            case CARS_TABLE:
+                return CarsTable.Requests.TABLE_NAME;
             default:
                 return "";
         }
@@ -75,6 +82,7 @@ public class OwnersContentProvider extends ContentProvider {
     @Nullable
     @Override
     public Uri insert(Uri uri, ContentValues values) {
+
         Log.d(TAG, "insert uri->"+uri+", values->"+values);
         SQLiteDatabase database = mDBHelper.getWritableDatabase();
         String table = getType(uri);

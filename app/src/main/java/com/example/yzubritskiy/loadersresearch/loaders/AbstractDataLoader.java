@@ -1,7 +1,9 @@
 package com.example.yzubritskiy.loadersresearch.loaders;
 
 import android.content.Context;
+import android.content.IntentFilter;
 import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.LocalBroadcastManager;
 
 import java.util.List;
 
@@ -10,6 +12,7 @@ import java.util.List;
  */
 
 public abstract  class AbstractDataLoader <E> extends AsyncTaskLoader <List<E>> {
+    private LoaderBroadcastReceiver loaderBroadcastReceiver = null;
 
     protected List<E> mLastDataList = null;
     protected abstract List<E> buildList();
@@ -39,6 +42,9 @@ public abstract  class AbstractDataLoader <E> extends AsyncTaskLoader <List<E>> 
         List<E> oldDataList = mLastDataList;
         mLastDataList = dataList;
         if (isStarted()) {
+//            if (oldDataList != null && !oldDataList.equals(dataList)) {
+//                onNewDataDelivered(dataList);
+//            }
             super.deliverResult(dataList);
         }
         if (oldDataList != null && oldDataList != dataList
@@ -46,6 +52,9 @@ public abstract  class AbstractDataLoader <E> extends AsyncTaskLoader <List<E>> 
             emptyDataList(oldDataList);
         }
     }
+
+//    protected void onNewDataDelivered(List<E> data) {
+//    }
     /**
      * Starts an asynchronous load of the list data. When the result is ready
      * the callbacks will be called on the UI thread. If a previous load has
@@ -62,6 +71,11 @@ public abstract  class AbstractDataLoader <E> extends AsyncTaskLoader <List<E>> 
         if (takeContentChanged() || mLastDataList == null
                 || mLastDataList.size() == 0) {
             forceLoad();
+        }
+        if(loaderBroadcastReceiver == null)
+        {
+            loaderBroadcastReceiver = new LoaderBroadcastReceiver(this);
+            LocalBroadcastManager.getInstance(getContext()).registerReceiver(loaderBroadcastReceiver, new IntentFilter("NEWDATASTRING"));
         }
     }
     /**

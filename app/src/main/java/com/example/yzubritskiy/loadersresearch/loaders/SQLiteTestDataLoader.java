@@ -14,6 +14,7 @@ import java.util.List;
 
 public class SQLiteTestDataLoader extends AbstractDataLoader<List> {
     private static final String TAG = "TAG_" + ContentChangingTask.class.getSimpleName();
+    private final ForceLoadContentObserver mObserver;
 
 
     private DBManager mDBManager;
@@ -31,6 +32,7 @@ public class SQLiteTestDataLoader extends AbstractDataLoader<List> {
         mGroupBy = groupBy;
         mHaving = having;
         mOrderBy = orderBy;
+        mObserver = new ForceLoadContentObserver();
     }
 
     @Override
@@ -39,6 +41,7 @@ public class SQLiteTestDataLoader extends AbstractDataLoader<List> {
         List testList = mDBManager. getAllOwners();
         return testList;
     }
+
     public void insert(Owner entity) {
         Log.d(TAG, "insert");
 

@@ -41,6 +41,15 @@ public class OwnersTable {
         return values;
     }
 
+
+    @NonNull
+    public static Owner fromContentValues(@NonNull ContentValues values) {
+        String firstName = values.getAsString(Columns.FIRST_NAME);
+        String secondName = values.getAsString((Columns.SECOND_NAME));
+        Date birthDate = new Date(values.getAsLong((Columns.BIRTH_DATE)));
+        long id = values.getAsLong((Columns.ID));
+        return new Owner(firstName, secondName, birthDate, id);
+    }
     @NonNull
     public static Owner fromCursor(@NonNull Cursor cursor) {
         String firstName = cursor.getString(cursor.getColumnIndex(Columns.FIRST_NAME));
